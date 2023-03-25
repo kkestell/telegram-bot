@@ -1,6 +1,6 @@
 # Telegram Bot
 
-Telegram bot to automatically download photos and videos from Telegram.
+Telegram bot that downloads photos and videos.
 
 ## Installation
 
@@ -92,4 +92,15 @@ View the logs for the service:
 
 ```console
 $ journalctl -f --user-unit telegram-bot.service
+```
+
+## Notes
+
+Changing `appsettings.json`:
+
+```console
+$ git update-index --no-assume-unchanged appsettings.*
+$ git add appsettings.*
+$ git commit -m "Update appsettings.json"
+$ git update-index --assume-unchanged appsettings.*
 ```
