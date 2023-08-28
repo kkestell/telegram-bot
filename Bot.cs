@@ -4,6 +4,7 @@ using Telegram.Bot.Exceptions;
 using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
+using Telegram.Bot.Types.InputFiles;
 using File = System.IO.File;
 
 namespace TelegramBot;
@@ -47,9 +48,16 @@ public class Bot : BackgroundService
 
         if (message.Text is not null)
         {
-            if (message.Text.ToLower().Contains("chang") && message.Text.ToLower().Contains("status"))
+            if (message.Text.ToLower().Contains("chang"))
             {
-                await SendStatusUpdate(botClient, message.Chat.Id, stoppingToken);
+                if (message.Text.ToLower().Contains("status"))
+                {
+                    await SendStatusUpdate(botClient, message.Chat.Id, stoppingToken);
+                }
+                else if (message.Text.ToLower().Contains("show"))
+                {
+                    await SendRandomPhoto(botClient, message.Chat.Id, stoppingToken);
+                }
             }
         }
         
@@ -97,12 +105,36 @@ public class Bot : BackgroundService
             cancellationToken: stoppingToken);
     }
     
+    private async Task SendRandomPhoto(ITelegramBotClient botClient, long chatId, CancellationToken stoppingToken)
+    {
+        var photoFiles = Directory.GetFiles(botOptions.Value.PhotoPath, "*.jpg");
+        
+        if (photoFiles.Length == 0)
+        {
+            await botClient.SendTextMessageAsync(
+                chatId: chatId,
+                text: "My exploits are largely fictional, and I have no captured memories to share with you. Qapla!",
+                cancellationToken: stoppingToken);
+            return;
+        }
+        
+        var randomPhoto = photoFiles[new Random().Next(photoFiles.Length)];
+    
+        await using var photoStream = File.OpenRead(randomPhoto);
+    
+        await botClient.SendPhotoAsync(
+            chatId: chatId,
+            photo: new InputOnlineFile(photoStream, randomPhoto),
+            caption: "Behold, a captured memory!",
+            cancellationToken: stoppingToken);
+    }
+    
     private async Task DownloadFileAsync(ITelegramBotClient botClient, string fileId, string filePath, CancellationToken stoppingToken)
     {
         var fileInfo = await botClient.GetFileAsync(fileId, stoppingToken);
     
         logger.LogInformation($"Downloading file {fileId}");
-    
+        
         if (fileInfo.FilePath is null)
             return;
     
